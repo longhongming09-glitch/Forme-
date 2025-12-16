@@ -133,15 +133,15 @@
         }
         
         .drawing-canvas {
-            /* 内部像素由 JS 设定 (350x120) */
-            /* CSS 确保它在移动端正确显示 */
+            /* Canvas 尺寸匹配 JS 常量 (350x120) */
             width: 90%; 
             max-width: 350px; 
             height: 120px; 
             border: 1px solid #000;
             background-color: #fff;
             flex-shrink: 0;
-            touch-action: none; /* 确保 Canvas 区域的触摸事件不会触发浏览器默认行为（如滚动） */
+            /* 核心修复：阻止浏览器在 Canvas 上默认的滚动/缩放行为 */
+            touch-action: none; 
         }
 
         .answer-and-controls {
@@ -386,7 +386,7 @@
             newElement.focus(); 
         }
 
-        // ------------------ 核心修复：Canvas 绘图逻辑 ------------------
+        // ------------------ Canvas 绘图逻辑 ------------------
 
         function initCanvas(index) {
             const canvas = document.getElementById(`canvas${index}`);
@@ -403,7 +403,7 @@
             canvas.addEventListener('mouseout', stopDrawing);
             canvas.addEventListener('mousemove', draw);
             
-            // 核心修复：触摸事件 - 阻止默认滚动行为
+            // 触摸事件 - 阻止默认滚动行为
             canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault(); 
                 startDrawing(e.touches[0]);
