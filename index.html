@@ -229,11 +229,14 @@
         const ADMIN_PASSWORD = "123"; // ⚠️ 请将此密码替换为您自己的安全密码
         let isAdmin = false; // 权限状态，默认关闭
         
-        // 默认题目
+        // 默认题目 - 已更新为您提供的几何图形题目
         const defaultQuizData = [
-            { question: "1. 请写出“勤能补拙”四个字。", answer: "勤能补拙" },
-            { question: "2. 请书写勾股定理的数学表达式 (a² + b² = c²)。", answer: "a² + b² = c²" },
-            { question: "3. 请写出“春晓”的作者姓名。", answer: "孟浩然" }
+            { question: "1. Triangle：△", answer: "三角形" },
+            { question: "2. Rectangle：▭", answer: "长方形" },
+            { question: "3. Carré：◻", answer: "正方形" },
+            { question: "4. trapèze: ⏢", answer: "梯形" },
+            { question: "5. Rond：○", answer: "圆形" },
+            { question: "6. Ovale：0", answer: "椭圆形" }
         ];
 
         let quizData = [];
