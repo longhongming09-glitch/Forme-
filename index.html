@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权限控制的书写对比平台</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+        }
+        
+        /* 顶部管理员按钮样式 */
+        .admin-toggle {
+            text-align: right;
+            margin-bottom: 15px;
+        }
+        .admin-toggle button {
+            padding: 10px 20px;
+            background-color: #ffc107; /* 警告色，提示管理入口 */
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .admin-toggle button:hover {
+            background-color: #e0a800;
+        }
+        /* 管理员模式激活时的提示 */
+        .admin-mode-active {
+            color: #dc3545;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .question-block {
+            margin-bottom: 35px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            line-height: 1.6;
+            flex-grow: 1;
+            min-height: 30px;
+            padding: 5px;
+            border: 1px dashed transparent;
+            /* 默认禁用编辑 */
+            cursor: default; 
+        }
+        
+        /* 仅在激活管理员模式时可编辑 */
+        .question-text[contenteditable="true"]:focus {
+            border: 1px dashed #007bff;
+            background-color: #fff;
+            outline: none;
+            cursor: text;
+        }
+        
+        .admin-controls button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: default; /* 默认禁用鼠标手型 */
+            opacity: 0.5; /* 默认半透明 */
+        }
+        
+        /* 激活管理员模式后按钮样式 */
+        .admin-controls.active button {
+            opacity: 1;
+            cursor: pointer;
+        }
+        
+        .save-btn {
+            background-color: #007bff;
+            color: white;
+            display: none;
+        }
+        .save-btn:hover {
+            background-color: #0056b3;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* 学生书写区域（不变） */
+        .handwriting-area {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        
+        .drawing-canvas {
+            border: 1px solid #000;
+            cursor: crosshair;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+
+        .answer-and-controls {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        .control-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .clear-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .show-answer-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .standard-answer {
+            margin-top: 5px;
+            padding: 10px;
+            border: 2px dashed #17a2b8;
+            background-color: #e6f7ff;
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-radius: 5px;
+            text-align: center;
+            display: none; 
+        }
+
+        .add-question-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: default; /* 默认禁用 */
+            margin-top: 15px;
+            background-color: #6c757d;
+            color: white;
+            opacity: 0.5;
+        }
+        .add-question-btn.active {
+            opacity: 1;
+            cursor: pointer;
+        }
+        .add-question-btn.active:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="admin-toggle">
+            <button onclick="enterAdminMode()">🔒 开启管理员模式</button>
+            <span id="adminStatus" class="admin-mode-active" style="display: none;">（已激活编辑权限）</span>
+        </div>
+
+        <h1>✍️ 权限控制的书写对比平台</h1>
+        <p>学生：请在 Canvas 上书写，完成后点击 **“查看标准答案”** 进行对比。</p>
+
+        <div id="quiz-area">
+            </div>
+        
+        <button class="add-question-btn" id="addQuestionBtn" onclick="addQuestion()">+ 新增一道题目</button>
+
+    </div>
+
+    <script>
+        // ===============================================
+        // 📢 管理员设置区
+        // ===============================================
+        const ADMIN_PASSWORD = "123"; // ⚠️ 请将此密码替换为您自己的安全密码
+        let isAdmin = false; // 权限状态，默认关闭
+        
+        // 默认题目（不变）
+        const defaultQuizData = [
+            { question: "1. 请写出“勤能补拙”四个字。", answer: "勤能补拙" },
+            { question: "2. 请书写勾股定理的数学表达式 (a² + b² = c²)。", answer: "a² + b² = c²" },
+            { question: "3. 请写出“春晓”的作者姓名。", answer: "孟浩然" }
+        ];
+
+        let quizData = [];
+        let canvases = [];
+
+        const quizArea = document.getElementById('quiz-area');
+        const addQuestionBtn = document.getElementById('addQuestionBtn');
+        const adminStatus = document.getElementById('adminStatus');
+
+        // 初始化/加载/保存数据（与上个版本相同）...
+        function loadQuizData() {
+            const savedData = localStorage.getItem('handwritingQuizData');
+            if (savedData) {
+                try { quizData = JSON.parse(savedData); } catch (e) { quizData = defaultQuizData; }
+            } else {
+                quizData = defaultQuizData;
+            }
+        }
+        function saveQuizData() {
+            localStorage.setItem('handwritingQuizData', JSON.stringify(quizData));
+        }
+
+        // ------------------ 权限控制核心 ------------------
+
+        function enterAdminMode() {
+            const passwordAttempt = prompt("请输入管理员密码：");
+            if (passwordAttempt === ADMIN_PASSWORD) {
+                isAdmin = true;
+                alert("管理员模式已激活。您可以开始编辑题目和答案了。");
+                adminStatus.style.display = 'inline';
+                renderQuiz(); // 重新渲染以激活编辑功能
+            } else if (passwordAttempt !== null) {
+                alert("密码错误。无法进入管理员模式。");
+            }
+        }
+
+        // ------------------ 渲染题目 (修改以支持权限控制) ------------------
+
+        function renderQuiz() {
+            loadQuizData(); 
+            quizArea.innerHTML = ''; 
+            canvases = []; 
+
+            // 激活/禁用 新增题目按钮
+            addQuestionBtn.disabled = !isAdmin;
+            addQuestionBtn.classList.toggle('active', isAdmin);
+
+            quizData.forEach((item, index) => {
+                const block = document.createElement('div');
+                block.className = 'question-block';
+                block.innerHTML = `
+                    <div class="question-header">
+                        <span 
+                            class="question-text" 
+                            id="qtext${index}" 
+                            contenteditable="${isAdmin ? 'true' : 'false'}" 
+                            onfocus="showSaveButton(this, ${index})"
+                            onblur="hideSaveButton(this, ${index})"
+                        >${item.question}</span>
+                        
+                        <div class="admin-controls ${isAdmin ? 'active' : ''}">
+                            <button class="save-btn" id="saveBtn${index}" onclick="saveQuestion(${index})" ${isAdmin ? '' : 'disabled'}>保存修改</button>
+                            <button class="delete-btn" onclick="deleteQuestion(${index})" ${isAdmin ? '' : 'disabled'}>删除此题</button>
+                        </div>
+                    </div>
+                    
+                    <div class="handwriting-area">
+                        <canvas id="canvas${index}" class="drawing-canvas" width="400" height="150"></canvas>
+                        <div class="answer-and-controls">
+                            <div class="control-buttons">
+                                <button class="show-answer-btn" onclick="toggleAnswer(${index})">查看标准答案</button>
+                                <button class="clear-btn" onclick="clearCanvas(${index})">清空重写</button>
+                            </div>
+                            <div id="answerDisplay${index}" class="standard-answer">
+                                标准答案：${item.answer}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                quizArea.appendChild(block);
+                initCanvas(index);
+            });
+        }
+        
+        // ------------------ 老师编辑功能（仅在 isAdmin=true 时才真正运行） ------------------
+
+        function showSaveButton(element, index) {
+            if (isAdmin) {
+                document.getElementById(`saveBtn${index}`).style.display = 'inline-block';
+                element.textContent = element.textContent.replace(/^\d+\.\s*/, '');
+            }
+        }
+
+        function hideSaveButton(element, index) {
+            if (isAdmin) {
+                if (!element.textContent.match(/^\d+\.\s*/)) {
+                    element.textContent = `${index + 1}. ${element.textContent.trim()}`;
+                }
+            }
+        }
+        
+        function saveQuestion(index) {
+            if (!isAdmin) { alert("无权限操作。"); return; }
+            const questionText = document.getElementById(`qtext${index}`).textContent.replace(/^\d+\.\s*/, '').trim();
+            const oldAnswer = quizData[index].answer;
+            
+            let newAnswer = prompt(`请输入第 ${index + 1} 题的新标准答案：`, oldAnswer);
+            
+            if (newAnswer !== null) {
+                quizData[index].question = `${index + 1}. ${questionText}`;
+                quizData[index].answer = newAnswer.trim();
+                
+                saveQuizData();
+                renderQuiz();
+                alert('题目和答案已成功保存！');
+            } else {
+                alert('操作取消。');
+                renderQuiz();
+            }
+        }
+
+        function deleteQuestion(index) {
+            if (!isAdmin) { alert("无权限操作。"); return; }
+            if (confirm(`确定要删除第 ${index + 1} 题吗？`)) {
+                quizData.splice(index, 1);
+                saveQuizData();
+                renderQuiz();
+                alert('题目已删除并重新编号！');
+            }
+        }
+
+        function addQuestion() {
+            if (!isAdmin) { alert("无权限操作。"); return; }
+            const newIndex = quizData.length;
+            const newQ = {
+                question: `${newIndex + 1}. [新题目] 请在此处输入题目内容`,
+                answer: "[新答案]"
+            };
+            quizData.push(newQ);
+            saveQuizData();
+            renderQuiz(); 
+            
+            const newElement = document.getElementById(`qtext${newIndex}`);
+            newElement.scrollIntoView({ behavior: 'smooth' });
+            newElement.focus(); 
+        }
+
+        // ------------------ 学生答题/对比功能 (Canvas 绘图逻辑不变) ------------------
+        
+        // ... (initCanvas, startDrawing, stopDrawing, draw, getCanvasIndex, clearCanvas 保持不变) ...
+        function initCanvas(index) {
+            const canvas = document.getElementById(`canvas${index}`);
+            const ctx = canvas.getContext('2d');
+            canvases[index] = { canvas, ctx, isDrawing: false };
+            ctx.lineWidth = 3; 
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#333';
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('touchstart', (e) => startDrawing(e.touches[0]));
+            canvas.addEventListener('touchend', stopDrawing);
+            canvas.addEventListener('touchmove', (e) => draw(e.touches[0]));
+        }
+        function startDrawing(e) { /* 绘图逻辑 */
+            const index = getCanvasIndex(e.target);
+            if (index === -1) return; 
+            const canvasData = canvases[index];
+            canvasData.isDrawing = true;
+            canvasData.ctx.beginPath();
+            const rect = canvasData.canvas.getBoundingClientRect();
+            canvasData.ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+        function stopDrawing(e) { /* 绘图逻辑 */
+            const index = getCanvasIndex(e.target);
+            if (index === -1) return; 
+            canvases[index].isDrawing = false;
+        }
+        function draw(e) { /* 绘图逻辑 */
+            const index = getCanvasIndex(e.target);
+            if (index === -1 || !canvases[index].isDrawing) return; 
+            const canvasData = canvases[index];
+            const rect = canvasData.canvas.getBoundingClientRect();
+            canvasData.ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            canvasData.ctx.stroke();
+        }
+        function getCanvasIndex(target) {
+            if (target && target.id && target.id.startsWith('canvas')) {
+                return parseInt(target.id.replace('canvas', ''));
+            }
+            return -1;
+        }
+        function clearCanvas(index) {
+            const canvasData = canvases[index];
+            canvasData.ctx.clearRect(0, 0, canvasData.canvas.width, canvasData.canvas.height);
+            document.getElementById(`answerDisplay${index}`).style.display = 'none';
+        }
+        function toggleAnswer(index) {
+            const answerDisplay = document.getElementById(`answerDisplay${index}`);
+            const button = document.querySelector(`#answerDisplay${index}`).previousElementSibling.querySelector('.show-answer-btn');
+            
+            if (answerDisplay.style.display === 'none' || answerDisplay.style.display === '') {
+                answerDisplay.style.display = 'block';
+                button.textContent = '隐藏标准答案';
+                button.style.backgroundColor = '#28a745';
+            } else {
+                answerDisplay.style.display = 'none';
+                button.textContent = '查看标准答案';
+                button.style.backgroundColor = '#17a2b8';
+            }
+        }
+        
+        window.onload = renderQuiz;
+    </script>
+
+</body>
+</html>
